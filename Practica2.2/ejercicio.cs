@@ -1,4 +1,6 @@
-﻿string opcion = "";
+﻿using System.Xml;
+
+string opcion = "";
 string rutaCSV = "";
 
 while (rutaCSV == string.Empty && opcion != "2")
@@ -51,15 +53,24 @@ while (opcion != "5")
     switch (opcion)
     {
         case "1":
-            ExportarCSVXML(rutaCSV);
-            //Console.WriteLine("Documento CSV exportado correctamente a XML.");
+            string[] lineas = LeerLineas(rutaCSV, "todos", "");
+            
+            ConvertirXML(lineas, "NetflixOriginals.xml");
+
+            Console.WriteLine("Documento CSV exportado correctamente a XML.");
+            Console.WriteLine($"Se han exportado {lineas.Length} películas.");
             break;
 
         case "2":
             Console.Write("Introduce el género: ");
+
             string genero = Console.ReadLine() ?? string.Empty;
-            //ExportarCSVXMLgenero(genero);
+            string[] lineasGenero = LeerLineas(rutaCSV, "genero", genero);
+
+            ConvertirXML(lineasGenero, $"NetflixOriginals_{genero}");
+
             Console.WriteLine($"Datos del género {genero} exportados correctamente.");
+            Console.WriteLine($"Se han exportado {lineasGenero.Length} películas.");
             break;
 
         case "3":
@@ -71,9 +82,14 @@ while (opcion != "5")
         
         case "4":
             Console.Write("Introduce el idioma: ");
+
             string idioma = Console.ReadLine() ?? string.Empty;
-            //ExportarCSVXMLidioma(idioma);
+            string[] lineasIdioma = LeerLineas(rutaCSV, "idioma", idioma);
+
+            ConvertirXML(lineasIdioma, $"NetflixOriginals_{idioma}");
+
             Console.WriteLine($"Datos con idioma {idioma} exportados correctamente.");
+            Console.WriteLine($"Se han exportado {lineasIdioma.Length} películas.");
             break;
         case "5":
             Console.WriteLine("Programa cerrado...");
@@ -112,21 +128,97 @@ string ObtenerRutaCSV()
     return ruta;
 }
 
-void ExportarCSVXML(string ruta)
+string[] LeerLineas(string ruta, string tipoFiltro, string filtro)
 {
-    string[] lineas = File.ReadAllLines(ruta);
+    string[] lineasCSV = File.ReadAllLines(ruta);
+    List<string> lineas = new List<string>();
 
-    Console.WriteLine($"Se han leido {lineas.Length} lineas.");
-
-    for (int i = 0; i < lineas.Length; i++)
+    for (int i = 1; i < lineasCSV.Length; i++)
     {
-        string[] datos = lineas[i].Split(',');
-
-        if(datos.Length != 6)
+        string[] datos = SepararLineaCSV(lineasCSV[i]);
+        
+        if (tipoFiltro == "todos")
         {
-            Console.WriteLine($"Problemas en la linea {i + 1}:");
-            Console.WriteLine(lineas[i]);
-            Console.WriteLine($"Se han encontrado {datos.Length} campos.");
+            lineas.Add(lineasCSV[i]);
+        } else if (tipoFiltro == "genero" && datos[1] == filtro)
+        {
+            lineas.Add(lineasCSV[i]);
+        } else if (tipoFiltro == "idioma" && datos[5] == filtro)
+        {
+            lineas.Add(lineasCSV[i]);
+        } else
+        {
+            string fecha = datos[2];
+            int anoPeli = int.Parse(fecha.Substring(fecha.Length - 4));
+            int anoFiltro = int.Parse(filtro);
+
+            if (anoPeli >= anoFiltro)
+            {
+                lineas.Add(lineasCSV[i]);
+            }
         }
+    }
+
+    return lineas.ToArray();
+}
+
+string[] SepararLineaCSV(string linea)
+{
+    string[] datos = new string[6];
+
+    string campoActual = "";
+    bool entreComillas = false;
+    int posicion = 0;
+
+    foreach (char charact in linea)
+    {
+        if (charact == '"')
+        {
+            entreComillas = !entreComillas;
+        } else if (charact == ',' && !entreComillas)
+        {
+            datos[posicion] = campoActual;
+            posicion ++;
+
+            campoActual = "";
+        } else
+        {
+            campoActual += charact;
+        }
+    }
+
+    datos[posicion] = campoActual;
+
+    return datos;
+}
+
+void ConvertirXML (string[] lineas, string nombreXML)
+{
+    XmlWriterSettings configuracion = new XmlWriterSettings();
+    configuracion.Indent = true;
+
+    using (XmlWriter xml = XmlWriter.Create(nombreXML, configuracion))
+    {
+        xml.WriteStartDocument();
+        xml.WriteStartElement("Peliculas");
+
+        foreach (string linea in lineas)
+        {
+            string[] datos = SepararLineaCSV(linea);
+
+            xml.WriteStartElement("Pelicula");
+
+            xml.WriteElementString("Title", datos[0]);
+            xml.WriteElementString("Genre", datos[1]);
+            xml.WriteElementString("Premiere", datos[2]);
+            xml.WriteElementString("Runtime", datos[3]);
+            xml.WriteElementString("IMDBScore", datos[4]);
+            xml.WriteElementString("Language", datos[5]);
+
+            xml.WriteEndElement();
+        }
+
+        xml.WriteEndElement();
+        xml.WriteEndDocument();
     }
 }
