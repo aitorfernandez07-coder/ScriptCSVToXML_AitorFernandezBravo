@@ -3,63 +3,75 @@
 string opcion = "";
 string rutaCSV = "";
 string rutaXML = "";
+string rutaXMLLectura = "";
+string rutaCSVGuardar = "";
 
-while (rutaCSV == string.Empty && opcion != "2")
-{
-    rutaCSV = ObtenerRutaCSV();
-
-    if (rutaCSV == string.Empty)
-    {
-        Console.WriteLine("¿Quieres indicar otra ruta?");
-        Console.WriteLine("1. SÍ");
-        Console.WriteLine("2. NO");
-        opcion = Console.ReadLine() ?? string.Empty;
-
-        switch (opcion)
-        {
-            case "1":
-                break;
-            
-            case "2":
-                Console.WriteLine("Programa cerrado...");
-                break;
-
-            default:
-                Console.WriteLine("Opción no valida.");
-                break;
-        }
-    }
-}
-
-if (rutaCSV == string.Empty)
-{
-    opcion = "5";
-}
-
-if (rutaCSV != string.Empty)
-{
-    rutaXML = ObtenerRutaXML();
-
-    while (rutaXML == string.Empty)
-    {
-        rutaXML = ObtenerRutaXML();
-    }
-}
-
-while (opcion != "5")
+while (opcion != "9")
 {
     Console.Clear();
 
     Console.WriteLine("==== MENU DE OPCIONES ====");
+    Console.WriteLine("De CSV a XML");
     Console.WriteLine("1. Exportar todo el documento (CSV a XML).");
     Console.WriteLine("2. Exportar solo las de un género.");
     Console.WriteLine("3. Exportar de un año en adelante.");
     Console.WriteLine("4. Exportar solo las de un idioma.");
-    Console.WriteLine("5. Cerrar aplicación.");
+    Console.WriteLine();
+    Console.WriteLine("De XML a CSV");
+    Console.WriteLine("5. Exportar todo el documento (XML a CSV).");
+    Console.WriteLine("6. Exportar solo las de un género.");
+    Console.WriteLine("7. Exportar de un año en adelante.");
+    Console.WriteLine("8. Exportar solo las de un idioma.");
+    Console.WriteLine();
+    Console.WriteLine("9. Cerrar aplicación.");
     Console.WriteLine();
     Console.Write("Seleccione una opción: ");
 
     opcion = Console.ReadLine() ?? string.Empty;
+
+    if (opcion == "1" || opcion == "2" || opcion == "3" || opcion == "4")
+    {
+        if (rutaCSV == string.Empty)
+        {
+            rutaCSV = ObtenerRutaCSV();
+        }
+
+        if (rutaCSV != string.Empty && rutaXML == string.Empty)
+        {
+            rutaXML = ObtenerRutaXML();
+        }
+
+        if (rutaCSV == string.Empty || rutaXML == string.Empty)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Pulsa Enter para continuar...");
+            Console.ReadKey();
+
+            continue;
+        }
+    }
+
+    if (opcion == "5" || opcion == "6" || opcion == "7" || opcion == "8")
+    {
+        if (rutaXMLLectura == string.Empty)
+        {
+            rutaXMLLectura = ObtenerRutaXMLLectura();
+        }
+
+        if (rutaXMLLectura != string.Empty && rutaCSVGuardar == string.Empty)
+        {
+            rutaCSVGuardar = ObtenerRutaGuardarCSV();
+        }
+
+        if (rutaXMLLectura == string.Empty || rutaCSVGuardar == string.Empty)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Pulsa Enter para continuar...");
+            Console.ReadKey();
+
+            continue;
+        }
+    }
 
     switch (opcion)
     {
@@ -95,10 +107,11 @@ while (opcion != "5")
             }
 
             string genero = generos[opcionGenero - 1];
+            string nombreGenero = genero.Replace("/", "-");
 
             string[] lineasGenero = LeerLineas(rutaCSV, "genero", genero);
 
-            ConvertirXML(lineasGenero, rutaXML, $"NetflixOriginals_{genero}.xml");
+            ConvertirXML(lineasGenero, rutaXML, $"NetflixOriginals_{nombreGenero}.xml");
 
             Console.WriteLine($"Datos del género {genero} exportados correctamente.");
             Console.WriteLine($"Se han exportado {lineasGenero.Length} películas.");
@@ -106,13 +119,21 @@ while (opcion != "5")
 
         case "3":
             Console.Write("Introduce el año: ");
-            
-            string ano = Console.ReadLine() ?? string.Empty;
+
+            int anoNumero;
+
+            while (!int.TryParse(Console.ReadLine(), out anoNumero))
+            {
+                Console.Write("Año no válido. Introduce el año: ");
+            }
+
+            string ano = anoNumero.ToString();
             string[] lineasAno = LeerLineas(rutaCSV, "ano", ano);
 
             ConvertirXML(lineasAno, rutaXML, $"NetflixOriginals_{ano}.xml");
 
             Console.WriteLine($"Datos a partir del año {ano} exportados correctamente.");
+            Console.WriteLine($"Se han exportado {lineasAno.Length} películas.");
             break;
         
         case "4":
@@ -138,16 +159,111 @@ while (opcion != "5")
             }
 
             string idioma = idiomas[opcionIdioma - 1];
+            string nombreIdioma = idioma.Replace("/", "-");
 
             string[] lineasIdioma = LeerLineas(rutaCSV, "idioma", idioma);
 
-            ConvertirXML(lineasIdioma, rutaXML, $"NetflixOriginals_{idioma}.xml");
+            ConvertirXML(lineasIdioma, rutaXML, $"NetflixOriginals_{nombreIdioma}.xml");
 
             Console.WriteLine($"Datos con idioma {idioma} exportados correctamente.");
             Console.WriteLine($"Se han exportado {lineasIdioma.Length} películas.");
             break;
 
         case "5":
+            string[] lineasXML = LeerPeliculasXML(rutaXMLLectura, "todos", "");
+
+            ConvertirCSV(lineasXML, rutaCSVGuardar, "NetflixOriginals_Exportado.csv");
+
+            Console.WriteLine("Documento XML exportado correctamente a CSV.");
+            Console.WriteLine($"Se han exportado {lineasXML.Length} películas.");
+            break;
+
+        case "6":
+            string[] generosXML = ObtenerGenerosXML(rutaXMLLectura);
+
+            Console.WriteLine("=== GÉNEROS DISPONIBLES ===");
+
+            for (int i = 0; i < generosXML.Length; i++)
+            {
+                Console.WriteLine($"{i + 1}. {generosXML[i]}");
+            }
+
+            Console.WriteLine();
+            Console.Write("Selecciona un género: ");
+
+            int opcionGeneroXML;
+
+            while (!int.TryParse(Console.ReadLine(), out opcionGeneroXML)
+                || opcionGeneroXML < 1
+                || opcionGeneroXML > generosXML.Length)
+            {
+                Console.Write("Opción no válida. Selecciona un género: ");
+            }
+
+            string generoXML = generosXML[opcionGeneroXML - 1];
+            string nombreGeneroXML = generoXML.Replace("/", "-");
+
+            string[] lineasGeneroXML = LeerPeliculasXML(rutaXMLLectura, "genero", generoXML);
+
+            ConvertirCSV(lineasGeneroXML, rutaCSVGuardar, $"NetflixOriginals_Exportado_{nombreGeneroXML}.csv");
+
+            Console.WriteLine($"Datos del género {generoXML} exportados correctamente.");
+            Console.WriteLine($"Se han exportado {lineasGeneroXML.Length} películas.");
+            break;
+
+        case "7":
+            Console.Write("Introduce el año: ");
+
+            int anoNumeroXML;
+
+            while (!int.TryParse(Console.ReadLine(), out anoNumeroXML))
+            {
+                Console.Write("Año no válido. Introduce el año: ");
+            }
+
+            string anoXML = anoNumeroXML.ToString();
+            string[] lineasAnoXML = LeerPeliculasXML(rutaXMLLectura, "ano", anoXML);
+
+            ConvertirCSV(lineasAnoXML, rutaCSVGuardar, $"NetflixOriginals_Exportado_{anoXML}.csv");
+
+            Console.WriteLine($"Datos a partir del año {anoXML} exportados correctamente.");
+            Console.WriteLine($"Se han exportado {lineasAnoXML.Length} películas.");
+            break;
+
+        case "8":
+            string[] idiomasXML = ObtenerIdiomasXML(rutaXMLLectura);
+
+            Console.WriteLine("=== IDIOMAS DISPONIBLES ===");
+
+            for (int i = 0; i < idiomasXML.Length; i++)
+            {
+                Console.WriteLine($"{i + 1}. {idiomasXML[i]}");
+            }
+
+            Console.WriteLine();
+            Console.Write("Selecciona un idioma: ");
+
+            int opcionIdiomaXML;
+
+            while (!int.TryParse(Console.ReadLine(), out opcionIdiomaXML)
+                || opcionIdiomaXML < 1
+                || opcionIdiomaXML > idiomasXML.Length)
+            {
+                Console.Write("Opción no válida. Selecciona un idioma: ");
+            }
+
+            string idiomaXML = idiomasXML[opcionIdiomaXML - 1];
+            string nombreIdiomaXML = idiomaXML.Replace("/", "-");
+
+            string[] lineasIdiomaXML = LeerPeliculasXML(rutaXMLLectura, "idioma", idiomaXML);
+
+            ConvertirCSV(lineasIdiomaXML, rutaCSVGuardar, $"NetflixOriginals_Exportado_{nombreIdiomaXML}.csv");
+
+            Console.WriteLine($"Datos con idioma {idiomaXML} exportados correctamente.");
+            Console.WriteLine($"Se han exportado {lineasIdiomaXML.Length} películas.");
+            break;
+
+        case "9":
             Console.WriteLine("Programa cerrado...");
             break;
 
@@ -156,7 +272,7 @@ while (opcion != "5")
             break;
     }
 
-    if (opcion != "5")
+    if (opcion != "9")
     {
         Console.WriteLine();
         Console.WriteLine("Pulsa Enter para continuar...");
@@ -343,29 +459,105 @@ void ConvertirXML(string[] lineas, string rutaXML, string nombreXML)
     }
 }
 
-void ConvertirCSV(string rutaXML, string rutaCSV, string nombreCSV)
+string[] LeerPeliculasXML(string ruta, string tipoFiltro, string filtro)
 {
     XmlDocument documento = new XmlDocument();
-    documento.Load(rutaXML);
+    documento.Load(ruta);
 
-    string rutaCompleta = Path.Combine(rutaCSV, nombreCSV);
+    XmlNodeList peliculas = documento.GetElementsByTagName("Pelicula");
+    List<string> lineas = new List<string>();
+
+    foreach (XmlNode pelicula in peliculas)
+    {
+        string titulo = pelicula["Title"]?.InnerText ?? "";
+        string genero = pelicula["Genre"]?.InnerText ?? "";
+        string estreno = pelicula["Premiere"]?.InnerText ?? "";
+        string duracion = pelicula["Runtime"]?.InnerText ?? "";
+        string puntuacion = pelicula["IMDBScore"]?.InnerText ?? "";
+        string idioma = pelicula["Language"]?.InnerText ?? "";
+
+        string linea = $"\"{titulo}\",\"{genero}\",\"{estreno}\",\"{duracion}\",\"{puntuacion}\",\"{idioma}\"";
+
+        if (tipoFiltro == "todos")
+        {
+            lineas.Add(linea);
+
+        } else if (tipoFiltro == "genero" && genero == filtro)
+        {
+            lineas.Add(linea);
+
+        } else if (tipoFiltro == "idioma" && idioma == filtro)
+        {
+            lineas.Add(linea);
+
+        } else if (tipoFiltro == "ano")
+        {
+            int anoPeli = int.Parse(estreno.Substring(estreno.Length - 4));
+            int anoFiltro = int.Parse(filtro);
+
+            if (anoPeli >= anoFiltro)
+            {
+                lineas.Add(linea);
+            }
+        }
+    }
+
+    return lineas.ToArray();
+}
+
+string[] ObtenerGenerosXML(string ruta)
+{
+    XmlDocument documento = new XmlDocument();
+    documento.Load(ruta);
+
+    XmlNodeList peliculas = documento.GetElementsByTagName("Pelicula");
+    List<string> generos = new List<string>();
+
+    foreach (XmlNode pelicula in peliculas)
+    {
+        string genero = pelicula["Genre"]?.InnerText ?? "";
+
+        if (!generos.Contains(genero))
+        {
+            generos.Add(genero);
+        }
+    }
+
+    return generos.ToArray();
+}
+
+string[] ObtenerIdiomasXML(string ruta)
+{
+    XmlDocument documento = new XmlDocument();
+    documento.Load(ruta);
+
+    XmlNodeList peliculas = documento.GetElementsByTagName("Pelicula");
+    List<string> idiomas = new List<string>();
+
+    foreach (XmlNode pelicula in peliculas)
+    {
+        string idioma = pelicula["Language"]?.InnerText ?? "";
+
+        if (!idiomas.Contains(idioma))
+        {
+            idiomas.Add(idioma);
+        }
+    }
+
+    return idiomas.ToArray();
+}
+
+void ConvertirCSV(string[] lineas, string rutaGuardar, string nombreCSV)
+{
+    string rutaCompleta = Path.Combine(rutaGuardar, nombreCSV);
 
     using (StreamWriter csv = new StreamWriter(rutaCompleta))
     {
         csv.WriteLine("Title,Genre,Premiere,Runtime,IMDB Score,Language");
 
-        XmlNodeList peliculas = documento.GetElementsByTagName("Pelicula");
-
-        foreach (XmlNode pelicula in peliculas)
+        foreach (string linea in lineas)
         {
-            string titulo = pelicula["Title"]?.InnerText ?? "";
-            string genero = pelicula["Genre"]?.InnerText ?? "";
-            string estreno = pelicula["Premiere"]?.InnerText ?? "";
-            string duracion = pelicula["Runtime"]?.InnerText ?? "";
-            string puntuacion = pelicula["IMDBScore"]?.InnerText ?? "";
-            string idioma = pelicula["Language"]?.InnerText ?? "";
-
-            csv.WriteLine($"\"{titulo}\",\"{genero}\",\"{estreno}\",\"{duracion}\",\"{puntuacion}\",\"{idioma}\"");
+            csv.WriteLine(linea);
         }
     }
 }
