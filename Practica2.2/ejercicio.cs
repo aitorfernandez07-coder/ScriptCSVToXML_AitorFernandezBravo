@@ -5,6 +5,13 @@ string rutaCSV = "";
 string rutaXML = "";
 string rutaXMLLectura = "";
 string rutaCSVGuardar = "";
+string rutaLog = Path.Combine(Directory.GetCurrentDirectory(), "log.txt");
+
+File.WriteAllText(rutaLog, "LOG DE LA APLICACIÓN" + Environment.NewLine);
+
+Console.WriteLine($"El log se guardará en: {rutaLog}");
+Console.WriteLine("Pulsa una tecla para continuar...");
+Console.ReadKey();
 
 while (opcion != "9")
 {
@@ -582,7 +589,6 @@ void ConvertirCSV(string[] lineas, string rutaOrigen, string rutaGuardar, string
 
 void EscribirLog(string mensaje)
 {
-    string rutaLog = Path.Combine(AppContext.BaseDirectory, "log.txt");
     string fecha = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
     File.AppendAllText(rutaLog, $"[{fecha}] {mensaje}{Environment.NewLine}");
