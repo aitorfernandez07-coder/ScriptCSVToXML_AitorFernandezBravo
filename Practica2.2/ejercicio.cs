@@ -5,6 +5,13 @@ string rutaCSV = "";
 string rutaXML = "";
 string rutaXMLLectura = "";
 string rutaCSVGuardar = "";
+string rutaLog = Path.Combine(Directory.GetCurrentDirectory(), "log.txt");
+
+File.WriteAllText(rutaLog, "LOG DE LA APLICACIÓN" + Environment.NewLine);
+
+Console.WriteLine($"El log se guardará en: {rutaLog}");
+Console.WriteLine("Pulsa una tecla para continuar...");
+Console.ReadKey();
 
 while (opcion != "9")
 {
@@ -78,7 +85,7 @@ while (opcion != "9")
         case "1":
             string[] lineas = LeerLineas(rutaCSV, "todos", "");
             
-            ConvertirXML(lineas, rutaXML, "NetflixOriginals.xml");
+            ConvertirXML(lineas, rutaCSV, rutaXML, "NetflixOriginals.xml");
 
             Console.WriteLine("Documento CSV exportado correctamente a XML.");
             Console.WriteLine($"Se han exportado {lineas.Length} películas.");
@@ -111,7 +118,7 @@ while (opcion != "9")
 
             string[] lineasGenero = LeerLineas(rutaCSV, "genero", genero);
 
-            ConvertirXML(lineasGenero, rutaXML, $"NetflixOriginals_{nombreGenero}.xml");
+            ConvertirXML(lineasGenero, rutaCSV, rutaXML, $"NetflixOriginals_{nombreGenero}.xml");
 
             Console.WriteLine($"Datos del género {genero} exportados correctamente.");
             Console.WriteLine($"Se han exportado {lineasGenero.Length} películas.");
@@ -130,7 +137,7 @@ while (opcion != "9")
             string ano = anoNumero.ToString();
             string[] lineasAno = LeerLineas(rutaCSV, "ano", ano);
 
-            ConvertirXML(lineasAno, rutaXML, $"NetflixOriginals_{ano}.xml");
+            ConvertirXML(lineasAno, rutaCSV, rutaXML, $"NetflixOriginals_{ano}.xml");
 
             Console.WriteLine($"Datos a partir del año {ano} exportados correctamente.");
             Console.WriteLine($"Se han exportado {lineasAno.Length} películas.");
@@ -163,7 +170,7 @@ while (opcion != "9")
 
             string[] lineasIdioma = LeerLineas(rutaCSV, "idioma", idioma);
 
-            ConvertirXML(lineasIdioma, rutaXML, $"NetflixOriginals_{nombreIdioma}.xml");
+            ConvertirXML(lineasIdioma, rutaCSV, rutaXML, $"NetflixOriginals_{nombreIdioma}.xml");
 
             Console.WriteLine($"Datos con idioma {idioma} exportados correctamente.");
             Console.WriteLine($"Se han exportado {lineasIdioma.Length} películas.");
@@ -172,7 +179,7 @@ while (opcion != "9")
         case "5":
             string[] lineasXML = LeerPeliculasXML(rutaXMLLectura, "todos", "");
 
-            ConvertirCSV(lineasXML, rutaCSVGuardar, "NetflixOriginals_Exportado.csv");
+            ConvertirCSV(lineasXML, rutaXMLLectura, rutaCSVGuardar, "NetflixOriginals_Exportado.csv");
 
             Console.WriteLine("Documento XML exportado correctamente a CSV.");
             Console.WriteLine($"Se han exportado {lineasXML.Length} películas.");
@@ -205,7 +212,7 @@ while (opcion != "9")
 
             string[] lineasGeneroXML = LeerPeliculasXML(rutaXMLLectura, "genero", generoXML);
 
-            ConvertirCSV(lineasGeneroXML, rutaCSVGuardar, $"NetflixOriginals_Exportado_{nombreGeneroXML}.csv");
+            ConvertirCSV(lineasGeneroXML, rutaXMLLectura, rutaCSVGuardar, $"NetflixOriginals_Exportado_{nombreGeneroXML}.csv");
 
             Console.WriteLine($"Datos del género {generoXML} exportados correctamente.");
             Console.WriteLine($"Se han exportado {lineasGeneroXML.Length} películas.");
@@ -224,7 +231,7 @@ while (opcion != "9")
             string anoXML = anoNumeroXML.ToString();
             string[] lineasAnoXML = LeerPeliculasXML(rutaXMLLectura, "ano", anoXML);
 
-            ConvertirCSV(lineasAnoXML, rutaCSVGuardar, $"NetflixOriginals_Exportado_{anoXML}.csv");
+            ConvertirCSV(lineasAnoXML, rutaXMLLectura, rutaCSVGuardar, $"NetflixOriginals_Exportado_{anoXML}.csv");
 
             Console.WriteLine($"Datos a partir del año {anoXML} exportados correctamente.");
             Console.WriteLine($"Se han exportado {lineasAnoXML.Length} películas.");
@@ -257,7 +264,7 @@ while (opcion != "9")
 
             string[] lineasIdiomaXML = LeerPeliculasXML(rutaXMLLectura, "idioma", idiomaXML);
 
-            ConvertirCSV(lineasIdiomaXML, rutaCSVGuardar, $"NetflixOriginals_Exportado_{nombreIdiomaXML}.csv");
+            ConvertirCSV(lineasIdiomaXML, rutaXMLLectura, rutaCSVGuardar, $"NetflixOriginals_Exportado_{nombreIdiomaXML}.csv");
 
             Console.WriteLine($"Datos con idioma {idiomaXML} exportados correctamente.");
             Console.WriteLine($"Se han exportado {lineasIdiomaXML.Length} películas.");
@@ -426,12 +433,16 @@ string[] SepararLineaCSV(string linea)
     return datos;
 }
 
-void ConvertirXML(string[] lineas, string rutaXML, string nombreXML)
+void ConvertirXML(string[] lineas, string rutaOrigen, string rutaXML, string nombreXML)
 {
     XmlWriterSettings configuracion = new XmlWriterSettings();
     configuracion.Indent = true;
 
     string rutaCompleta = Path.Combine(rutaXML, nombreXML);
+
+    EscribirLog("INICIO - Exportando de CSV a XML");
+    EscribirLog($"Fichero origen (CSV): {rutaOrigen}");
+    EscribirLog($"Fichero destino (XML): {rutaCompleta}");
 
     using (XmlWriter xml = XmlWriter.Create(rutaCompleta, configuracion))
     {
@@ -452,11 +463,15 @@ void ConvertirXML(string[] lineas, string rutaXML, string nombreXML)
             xml.WriteElementString("Language", datos[5]);
 
             xml.WriteEndElement();
+
+            EscribirLog($"Pelicula procesada -> Title: {datos[0]} | Genre: {datos[1]} | Premiere: {datos[2]} | Runtime: {datos[3]} | IMDBScore: {datos[4]} | Language: {datos[5]}");
         }
 
         xml.WriteEndElement();
         xml.WriteEndDocument();
     }
+
+    EscribirLog($"FIN - Exportación terminada. Se han exportado {lineas.Length} películas. Archivo nuevo en: {rutaCompleta}");
 }
 
 string[] LeerPeliculasXML(string ruta, string tipoFiltro, string filtro)
@@ -547,9 +562,13 @@ string[] ObtenerIdiomasXML(string ruta)
     return idiomas.ToArray();
 }
 
-void ConvertirCSV(string[] lineas, string rutaGuardar, string nombreCSV)
+void ConvertirCSV(string[] lineas, string rutaOrigen, string rutaGuardar, string nombreCSV)
 {
     string rutaCompleta = Path.Combine(rutaGuardar, nombreCSV);
+
+    EscribirLog("INICIO - Exportando de XML a CSV");
+    EscribirLog($"Fichero origen (XML): {rutaOrigen}");
+    EscribirLog($"Fichero destino (CSV): {rutaCompleta}");
 
     using (StreamWriter csv = new StreamWriter(rutaCompleta))
     {
@@ -558,8 +577,21 @@ void ConvertirCSV(string[] lineas, string rutaGuardar, string nombreCSV)
         foreach (string linea in lineas)
         {
             csv.WriteLine(linea);
+
+            string[] datos = SepararLineaCSV(linea);
+
+            EscribirLog($"Pelicula procesada -> Title: {datos[0]} | Genre: {datos[1]} | Premiere: {datos[2]} | Runtime: {datos[3]} | IMDBScore: {datos[4]} | Language: {datos[5]}");
         }
     }
+
+    EscribirLog($"FIN - Exportación terminada. Se han exportado {lineas.Length} películas. Archivo nuevo en: {rutaCompleta}");
+}
+
+void EscribirLog(string mensaje)
+{
+    string fecha = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+    File.AppendAllText(rutaLog, $"[{fecha}] {mensaje}{Environment.NewLine}");
 }
 
 string ObtenerRutaXMLLectura()
